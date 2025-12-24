@@ -4,7 +4,18 @@ A lightweight Python project that tracks live cryptocurrency prices, plots them 
 
 Built as a practical exercise in working with APIs, automation, and real-time data visualization.
 
-
+<table>
+  <tr>
+    <td align="center">
+      <img src="images/screenshot.png" width="400"/><br/>
+      <sub>Live price tracking</sub>
+    </td>
+    <td align="center">
+      <img src="images/IMG_2067.PNG" width="400"/><br/>
+      <sub>Telegram alert notification</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
