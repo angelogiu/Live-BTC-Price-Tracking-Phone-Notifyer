@@ -17,9 +17,27 @@ load_dotenv()
 
 url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
 
+#write out the dictionary with all of the coins and then make it change for the parameter and the data api
+
+coinlist = {"BTC":1,
+            "BNB":1839,
+            "USDT":825,
+            "ETH":1027}
+
+coin_input = input("Select the coin that you would like to look at (Ticker Symbol: BTC, BNB, USDT, ETH): ")
+coinselect = coin_input.upper().strip()
+
+threshold_input = input("Select the threshold as a float for the percent increase or decrease: ")
+THRESHOLD = float(threshold_input) / 100
+
+
+interval_input = input("Select the time in seconds that you would like to check the price: ")
+intervalchosen = float(interval_input) * 1000
+
+
 
 parameters = {
-  'id': 1,
+  'id': coinlist[coinselect],
   'convert':'CAD'
 }
 
@@ -47,20 +65,19 @@ def send_telegram(msg):
     if r.status_code != 200:
         print("Telegram error:", r.text)
 
-    
 session = Session()
 session.headers.update(headers)
 
 #API
-def getBTCprice():
+def getCryptoprice():
     try:
         response = session.get(url, params=parameters, timeout=15)
         response.raise_for_status()
         data = response.json()
-        return float(data["data"]["1"]["quote"]["CAD"]["price"])
+        return float(data["data"][str(coinlist[coinselect])]["quote"]["CAD"]["price"])
 
     except (ConnectionError, Timeout, TooManyRedirects, HTTPError, KeyError, ValueError) as e:
-        print("BTC fetch failed:", e)
+        print(f"{coinselect} fetch failed:", e)
         return None
 
 times = []
@@ -68,19 +85,18 @@ prices = []
 fig, ax = plt.subplots()
 (line,) = ax.plot([], [], marker="o", linestyle="-")
 
-ax.set_title("BTC Price Over Time")
+ax.set_title(f"{coinselect} Price Over Time")
 ax.set_xlabel("Time")
 ax.set_ylabel("Price (CAD)")
 
 baselineprice = None
-THRESHOLD = 0.01
 
 def update(_frame):
     global baselineprice
 
-    send_telegram("TEST ALERT — update reached alert block")
+    # send_telegram("TEST ALERT")
 
-    price = getBTCprice()
+    price = getCryptoprice()
     if price is None:
         return (line,)
 
@@ -98,7 +114,7 @@ def update(_frame):
         rotation=45, ha="right"
     )
 
-    print(f"{time.strftime('%H:%M:%S')}  BTC: {price:,.2f} CAD")
+    print(f"{time.strftime('%H:%M:%S')}  {coinselect}: {price:,.2f} CAD")
     
     if baselineprice is None:
         baselineprice = price
@@ -109,7 +125,7 @@ def update(_frame):
     if abs(percent_change) >= THRESHOLD:
         direction = "up" if percent_change > 0 else "down"
         send_telegram(
-                f"BTC moved {direction} {percent_change*100:.2f}% since last baseline.\n"
+                f"{coinselect} moved {direction} {percent_change*100:.5f}% since last baseline.\n"
                 f"Current: ${price:,.2f} CAD\n"
                 f"Baseline: ${baselineprice:,.2f} CAD"
             
@@ -117,7 +133,7 @@ def update(_frame):
         baselineprice = price
     return (line,)
 
-ani = FuncAnimation(fig, update, interval=6000, blit=False)
+ani = FuncAnimation(fig, update, interval=intervalchosen, blit=False)
 
 plt.tight_layout()
 plt.show()
